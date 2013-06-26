@@ -5,110 +5,111 @@
 
 
 local storyboard = require("storyboard")
+local upapi = require "upapi"
+local json = require("json")
 local scene = storyboard.newScene()
+storyboard.purgeOnSceneChange = true
+
+local user_xid = upapi.readFile(storyboard.states.userXIDPath)
+
+-- Global variables for displays
+local displayBarHeight = display.contentHeight / 10
+local bottomBarPosY = display.contentHeight - displayBarHeight / 2
+local topBarPosY = displayBarHeight / 2
 
 local function displayNewStartButton ()
-	newGameGroup = display.newGroup()
-	newGameButton = display.newRoundedRect(0,0, 
-		display.contentWidth/2.5, 
-		display.contentWidth/5,
-		display.contentWidth/20)
-	newGameButton:setFillColor(50, 50, 50)
-	newGameButton:setReferencePoint(display.CenterReferencePoint)
-	newGameText = display.newText("Start", 0, 0, native.systemFont, 24)
-	newGameGroup.x = display.contentWidth/2
-	newGameGroup.y = display.contentHeight/2
-	newGameGroup:insert(newGameButton, true)
-	newGameGroup:insert(newGameText,true)
-	return newGameGroup
+	startGameGroup = display.newGroup()
+	startGameButton = display.newCircle( 0, 0, display.contentWidth/5)
+	startGameButton:setFillColor(200, 200, 200)
+	startGameButton:setReferencePoint(display.CenterReferencePoint)
+	startGameText = display.newText("start", 0, 0, storyboard.states.font.bold, 24)
+	startGameText:setTextColor(50,50,50)
+	startGameGroup.x = display.contentWidth/2
+	startGameGroup.y = display.contentHeight/2
+	startGameGroup:insert(startGameButton, true)
+	startGameGroup:insert(startGameText,true)
+	return startGameGroup
 end
+
 
 function  scene:createScene(event)
 	local group = self.view
 	-- Display and graphics
 	display.setStatusBar(display.HiddenStatusBar)
 	display.setDefault("background", 255, 255, 255)
+
+	-- Holder object for the popping circle
+
+	local popTimer = nil
+	sessionData = {}
 	
 
-	local reactionInfo = display.newText("", 0, 0, native.systemFontBold, 24)
+	local reactionInfo = display.newText(group, "", 0, 0, storyboard.states.font.regular, 24)
 	reactionInfo:setTextColor(50,50,50)
 
-	local lowLeftRect = display.newRect(0,0,display.contentWidth/3, display.contentHeight/8)
-	local lowMidRect = display.newRect(0,0,display.contentWidth/3, display.contentHeight/8)
-	local lowRightRect = display.newRect(0,0,display.contentWidth/3, display.contentHeight/8)
+	local topBarRect = display.newRect(group, 0, 0, display.contentWidth, displayBarHeight)
+	topBarRect:setFillColor(200,200,200)
 
-	lowLeftRect:setFillColor(225,225,225)
-	lowLeftRect:setStrokeColor(200,200,200)
-	lowLeftRect.strokeWidth = 4
 
-	lowMidRect:setFillColor(225,225,225)
-	lowMidRect:setStrokeColor(200,200,200)
-	lowMidRect.strokeWidth = 4
+	local topLeftInfo = display.newText(group, "round 1", 0, 0, storyboard.states.font.bold, 18)
+	topLeftInfo:setTextColor(50,50,50)
+	topLeftInfo:setReferencePoint(display.CenterLeftReferencePoint);
+	topLeftInfo.x = displayBarHeight / 2
+	topLeftInfo.y = displayBarHeight/2
 
-	lowRightRect:setFillColor(225,225,225)
-	lowRightRect:setStrokeColor(200,200,200)
-	lowRightRect.strokeWidth = 4
+	local topRightInfo = display.newText(group, "end", 0, 0, storyboard.states.font.bold, 18)
+	topRightInfo:setReferencePoint(display.CenterRightReferencePoint);
+	topRightInfo:setTextColor(50,50,50)
+	topRightInfo.x = display.contentWidth - displayBarHeight / 2
+	topRightInfo.y = displayBarHeight/2
 
-	local topLeftRect = display.newRect(0,0,display.contentWidth/2, display.contentHeight/8)
-	local topRightRect = display.newRect(0,0,display.contentWidth/2, display.contentHeight/8)
 
-	topLeftRect:setFillColor(225,225,225)
-	topLeftRect:setStrokeColor(200,200,200)
-	topLeftRect.strokeWidth = 4
+	local bottomBarRect = display.newRect(group, 0, display.contentHeight - displayBarHeight, display.contentWidth, displayBarHeight)
+	bottomBarRect:setFillColor(200,200,200)
 
-	topRightRect:setFillColor(225,225,225)
-	topRightRect:setStrokeColor(200,200,200)
-	topRightRect.strokeWidth = 4
-
-	local lowLeftInfo = display.newText("Average", 0, 0, native.systemFontBold, 18)
+	local lowLeftInfo = display.newText(group, "", 0, 0, storyboard.states.font.bold, 18)
 	lowLeftInfo:setTextColor(50,50,50)
+	local lowLeftInfoLabel = display.newText(group, "average", 0, 0, storyboard.states.font.bold, 12)
 
-	local lowMidInfo = display.newText("Median", 0, 0, native.systemFontBold, 18)
+	local lowMidInfo = display.newText(group, "", 0, 0, storyboard.states.font.bold, 18)
+	local lowMidInfoLabel = display.newText(group, "current", 0, 0, storyboard.states.font.bold, 12)
 	lowMidInfo:setTextColor(50,50,50)
 
-	local lowRightInfo = display.newText("Fastest", 0, 0, native.systemFontBold, 18)
+	local lowRightInfo = display.newText(group, "", 0, 0, storyboard.states.font.bold, 18)
 	lowRightInfo:setTextColor(50,50,50)
+	local lowRightInfoLabel = display.newText(group, "fastest", 0, 0, storyboard.states.font.bold, 12)
 
-	local topLeftInfo = display.newText("Round 1", 0, 0, native.systemFontBold, 18)
-	topLeftInfo:setTextColor(50,50,50)
-
-	local topRightInfo = display.newText("Time", 0, 0, native.systemFontBold, 18)
-	topRightInfo:setTextColor(50,50,50)
 
 	local lowLeftGroup = display.newGroup()
 	lowLeftGroup.x = display.contentWidth / 6
-	lowLeftGroup.y = display.contentHeight * 17/18
-	lowLeftGroup:insert(1,lowLeftRect, true)
+	lowLeftGroup.y = bottomBarPosY
 	lowLeftGroup:insert(lowLeftInfo, true)
+	lowLeftGroup:insert(1, lowLeftInfoLabel, true)
+	lowLeftInfo.y =  displayBarHeight / 8
+	lowLeftInfoLabel.y = - displayBarHeight / 4
 
 	local lowMidGroup = display.newGroup()
 	lowMidGroup.x = display.contentWidth / 6 * 3
-	lowMidGroup.y = display.contentHeight * 17/18
-	lowMidGroup:insert(1,lowMidRect, true)
+	lowMidGroup.y = bottomBarPosY
 	lowMidGroup:insert(lowMidInfo, true)
+	lowMidGroup:insert(1, lowMidInfoLabel, true)
+	lowMidInfo.y =  displayBarHeight / 8
+	lowMidInfoLabel.y = - displayBarHeight / 4
+
 
 	local lowRightGroup = display.newGroup()
 	lowRightGroup.x = display.contentWidth / 6 * 5
-	lowRightGroup.y = display.contentHeight * 17/18
-	lowRightGroup:insert(1,lowRightRect, true)
+	lowRightGroup.y = bottomBarPosY
 	lowRightGroup:insert(lowRightInfo, true)
+	lowRightGroup:insert(1, lowRightInfoLabel, true)
+	lowRightInfo.y =  displayBarHeight / 8
+	lowRightInfoLabel.y = - displayBarHeight / 4
 
-	local centeredGroup = display.newGroup()
-	centeredGroup.x = display.contentWidth * 0.5
-	centeredGroup.y = display.contentHeight * 0.2
-	centeredGroup:insert(reactionInfo, true)
 
-	local topLeftGroup = display.newGroup()
-	topLeftGroup.x = display.contentWidth / 4
-	topLeftGroup.y = display.contentHeight /18
-	topLeftGroup:insert(1,topLeftRect, true)
-	topLeftGroup:insert(topLeftInfo, true)
 
-	local topRightGroup = display.newGroup()
-	topRightGroup.x = display.contentWidth / 4 * 3
-	topRightGroup.y = display.contentHeight / 18
-	topRightGroup:insert(1,topRightRect, true)
-	topRightGroup:insert(topRightInfo, true)
+	group:insert(lowLeftGroup)
+	group:insert(lowMidGroup)
+	group:insert(lowRightGroup)
 
 
 	-- Variables for keeping track of game progres
@@ -118,7 +119,7 @@ function  scene:createScene(event)
 	local fastestReactTime = nil
 	local roundNum = 1
 
-	local function updateTime(newTime)
+	function updateTime(newTime)
 		if aveReactTime == nil then aveReactTime = newTime
 		else
 			preciseAveReactTime = (aveReactTime * (roundNum - 1) + newTime) / roundNum
@@ -128,71 +129,162 @@ function  scene:createScene(event)
 		elseif fastestReactTime > newTime then fastestReactTime = newTime
 		end
 
-		lowLeftInfo.text = aveReactTime
-		lowRightInfo.text = fastestReactTime
-		topRightInfo.text = newTime
+		lowLeftInfo.text = string.format("%.3f", aveReactTime)
+		lowRightInfo.text = string.format("%.3f",fastestReactTime)
+		lowMidInfo.text = string.format("%.3f", newTime)
+		sessionData.timings[string.format("%d", roundNum)] = newTime
+		local t = os.date('*t')
+		local reactionTimingInstance = {}
+		reactionTimingInstance.timestamp = t
+		reactionTimingInstance.reactionTime = newTime
+		upapi.insertTimingToDatabase(reactionTimingInstance)
+		storyboard.states.timings[roundNum]=newTime
 	end
 
 
-	local function popCircle()
+
+	function popCircle()
 		-- Circle for reaction time testing
-		local circle = display.newCircle(
+		circle = display.newCircle(
 			display.contentWidth/2, 
 			display.contentHeight/2, 
 			display.contentWidth/5)
 		circle:setFillColor(235, 120, 35)
-
-		
-
+		print(circle)
 
 		function circle:touch(event)
-			tapTime = system.getTimer()
-			reactionTime = math.round(tapTime - popCompleted)/1000
-			updateTime(reactionTime)
-			print("Reaction time is " .. tapTime-popCompleted)
-			circle:removeSelf()
 
-			local event = { name = "newRound", target = Runtime }
-			Runtime:dispatchEvent(event)
-			circle:removeEventListener("circle", circle)
+			if event.phase == "began" then
+				tapTime = system.getTimer()
+				reactionTime = math.round(tapTime - popCompleted)/1000
+				updateTime(reactionTime)
+				roundNum = roundNum + 1
+				print("Reaction time is " .. tapTime-popCompleted)
+				
+			elseif event.phase == "ended" then
+				circle:removeEventListener("touch", circle)
+				circle:removeSelf()
+				circle = nil
+				if roundNum > storyboard.states.totalNumRounds then
+					local endGameEvent = { name = "endGame", target = Runtime }
+					Runtime:dispatchEvent(endGameEvent)
+				else
+					local testReactionEvent = { name = "testReaction", target = Runtime }
+					Runtime:dispatchEvent(testReactionEvent)
+				end
+				
+			end
 		end
 		circle:addEventListener("touch", circle)
 
 	end
 
 
-	local function randomTap(event)
-		currentTime = system.getTimer()
-		print("Random touch time is " .. currentTime)
-		if currentTime < popCompleted then print("Pressed too early")
-			
+
+	function randomTap(event)
+		local currentTime = 0
+		if event.phase == "began" then
+			currentTime = system.getTimer()
+			print("Random touch time is " .. currentTime)
+			if currentTime < popCompleted then 
+				print("Pressed too early")
+			end
 		end
-		Runtime:removeEventListener( "touch", randomTap)
+		
 	end
 
-
-
-	local function testReaction()
-		Runtime:addEventListener("touch", randomTap)
-		topLeftInfo.text = "Round " .. roundNum
-		popDelay = math.random(500, 1500);
-
-		popTimer = timer.performWithDelay(popDelay, popCircle)
+	function testReaction()
+		print(roundNum)
+		
+		topLeftInfo.text = "round " .. roundNum
+		popDelay = math.random(1000, 2000);
 		popStart = system.getTimer()
+		popTimer = timer.performWithDelay(popDelay, popCircle)
 		print("Start = " .. popStart)
 		print("Delay = " .. popDelay)
 		popCompleted = popStart + popDelay
 		print("Completed = " .. popCompleted)
-		roundNum = roundNum + 1
-		print(roundNum)
+		
 	end
 
-	Runtime:addEventListener( "newRound", testReaction)
 
-	if roundNum == 1 then 
-		local event = { name = "newRound", target = Runtime }
-		Runtime:dispatchEvent(event)
+	function startGame()
+		local screen = display.newRect(group, 0, 0, display.contentWidth, display.contentHeight)
+		-- body
+		Runtime:removeEventListener("startGame", startGame)
+		print("Removed runtime event listener for start game")
+		local startGameButton = displayNewStartButton()
+		group:insert(startGameButton)
+		
+		print("start button displayed")
+		function startGameButton:touch( event )
+			if event.phase == "ended" then
+				Runtime:addEventListener("touch", randomTap)
+				for i=startGameButton.numChildren, 1, -1 do
+					local child = startGameButton[i] 
+					child.parent:remove(child)
+				end
+				screen:removeSelf()
+				
+				local testReactionEvent = { name = "testReaction", target = Runtime }
+				startGameButton:removeEventListener("touch", startGameButton)
+				print("start button removed")
+				Runtime:dispatchEvent(testReactionEvent)
+			end
+		end
+		startGameButton:addEventListener("touch", startGameButton)
 	end
+
+	-- Function to end timing update
+	function topRightInfo:touch( event )
+
+		if event.phase == "ended" then
+			topRightInfo:removeEventListener("touch")
+			local endGameEvent = { name = "endGame", target = Runtime }
+			Runtime:dispatchEvent(endGameEvent)
+		end
+
+	end
+	topRightInfo:addEventListener("touch", topRightInfo)
+
+	function endGame( )
+		print(circle)
+		-- if circle then
+		-- 	-- Remove all the circles if it hasn't been removed yet
+		-- 	circle:removeEventListener("touch", circle)
+		-- 	circle:removeSelf()
+		-- 	print("The circle is on the screen")
+		-- else
+		-- 	timer.cancel(popTimer)
+		-- 	print("Timer to pop circle cancelled.")
+		-- end
+		
+		
+		sessionData.endTime = os.time()
+		sessionData.fastestReactTime = fastestReactTime
+		sessionData.aveReactTime = aveReactTime
+		print(json.encode(sessionData.timings))
+		sessionData.numTries = roundNum - 1
+
+		upapi.updateTimings(sessionData)
+		timer.performWithDelay(5,function() storyboard.gotoScene("results") end)
+	end
+
+	
+
+	Runtime:addEventListener( "startGame", startGame)
+	Runtime:addEventListener( "testReaction", testReaction)
+	Runtime:addEventListener( "endGame", endGame)
+
+	if roundNum == 1 then
+		print("Round 1 started.") 
+		local startGameEvent = { name = "startGame", target = Runtime }
+		Runtime:dispatchEvent(startGameEvent)
+		sessionData.startTime = os.time()
+		sessionData.timings = {}
+	end
+
+	
 end
 
 function scene:enterScene( event )
@@ -201,7 +293,15 @@ end
 
 function scene:exitScene( event )
 	local group = self.view
+	Runtime:removeEventListener("testReaction", testReaction)
+	print("Removed event listener for test reaction")
+	Runtime:removeEventListener("touch", randomTap)
+	print("Remove event listener for randomTap")
+
+	-- Update user performance if relevant
+
 	
+
 end
 
 function scene:destroyScene( event )

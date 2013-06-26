@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------------------
 
 -- Libraries
-local storyboard = require "storyboard" 
+local storyboard = require( "storyboard" )
 local widget = require( "widget" )
 local upapi = require "upapi"
 local math = require( "math")
@@ -26,95 +26,101 @@ storyboard.purgeOnSceneChange = true
 --
 function scene:createScene( event )
 	local group = self.view
+	-- local flyingGroup = display.newGroup()
+	-- flyingGroup:setReferencePoint(display.CenterLeftReferencePoint)
+	-- flyingGroup.x = display.contentWidth / 4 * 3
+	-- flyingGroup.y = display.contentHeight / 2
 
 	-- Background Color
 	local background = display.newRect(0,0,display.contentWidth,display.contentHeight)
 	background:setFillColor(230,230,230)
-	group:insert(background)
-
 
 	-- Function to handle button events
 	local function onPlayPressed( event )
-	    if event.phase == "ended" then
+    	local phase = event.phase 
+
+	    if phase == "ended" then
 	    	if upapi.isLoggedIn() then
 	    	    storyboard.gotoScene("game")
 	    	else
 	    		storyboard.gotoScene("loginScreen")
 	    	end
     	end
+
+    	return true
 	end
+
+	-- Create the play button
+	local playButton = widget.newButton { 
+		left = 0,
+		top = (display.contentHeight - iconNum * iconHeight - (iconNum - 1) * iconSep) / 2,
+		width = iconWidth,
+		height = iconHeight,
+		defaultFile = "play_icon.png",
+		id = "play_icon",
+		onEvent = onPlayPressed,
+	}
+
+	-- flyingGroup:insert(playButton, true)
+
 	-- Function to handle button events
 	local function onDetailsPressed(event)
-	    if event.phase == "ended" then
+    	local phase = event.phase 
+
+	    if phase == "ended" then
+
     	    if upapi.isLoggedIn() then
     	    	storyboard.gotoScene("details")
     	    else
     	    	storyboard.gotoScene("loginScreen")
     	    end
+
     	end
+
+    	return true
 	end
 
+	-- Create the play button
+	local detailsButton = widget.newButton {flyingGroup,
+		left = 0, --display.contentWidth * 1/5,
+		top = (display.contentHeight - iconNum * iconHeight - (iconNum - 1) * iconSep) / 2 + iconSep + iconHeight,
+		width = iconWidth,
+		height = iconHeight,
+		defaultFile = "details_icon.png",
+		id = "details_icon",
+		onEvent = onDetailsPressed,
+	}
 
-	local function displayButtons()
-		-- Create the play button
-		playButton = widget.newButton {
-			left = display.contentWidth * 1/5,
-			top = (display.contentHeight - iconNum * iconHeight - (iconNum - 1) * iconSep) / 2,
-			width = iconWidth,
-			height = iconHeight,
-			defaultFile = "play_icon.png",
-			id = "play_icon",
-			onEvent = onPlayPressed,
-		}
-		-- Create the details button
-		detailsButton = widget.newButton {
-			left = display.contentWidth * 1/5,
-			top = (display.contentHeight - iconNum * iconHeight - (iconNum - 1) * iconSep) / 2 + iconSep + iconHeight,
-			width = iconWidth,
-			height = iconHeight,
-			defaultFile = "details_icon.png",
-			id = "details_icon",
-			onEvent = onDetailsPressed,
-		}
+	-- flyingGroup:insert(playButton, true)
 
-		group:insert(playButton)
-		group:insert(detailsButton)
-	end
-	
+	-- flyingGroup.x = display.contentWidth / 4 * 3
+	-- flyingGroup.y = display.contentHeight / 2
+	-- playButton.y = iconSep / 2
 
-	-- Play button label
-	local function printLabels()
-		playButtonLabel = display.newText("play", 0, 0, storyboard.states.font.bold, 32)
-		playButtonLabel:setReferencePoint(display.CenterLeftReferencePoint)
-		playButtonLabel.y = playButton.y
-		playButtonLabel.x = playButton.x + playButton.width*0.75
-		playButtonLabel:setTextColor(60,60,60)
-		group:insert(playButtonLabel)
 
-		detailsButtonLabel = display.newText("menu", 0, 0, storyboard.states.font.bold, 32)
-		detailsButtonLabel:setReferencePoint(display.CenterLeftReferencePoint)
-		detailsButtonLabel.y = detailsButton.y
-		detailsButtonLabel.x = detailsButton.x + detailsButton.width*0.75
-		detailsButtonLabel:setTextColor(60,60,60)
-		group:insert(detailsButtonLabel)
-	end
-
-	timer.performWithDelay(75, displayButtons)
-	timer.performWithDelay(100, printLabels)
+	group:insert(background)
+	group:insert(playButton)
+	group:insert(detailsButton)
 
 	
 end
 
 function scene:enterScene( event )
-	local group = self.view	
+	local group = self.view
+	local priorScene = storyboard.getPrevious()
+	storyboard.purgeScene( priorScene )
+	
 end
 
 function scene:exitScene( event )
 	local group = self.view
+	
+	-- INSERT code here (e.g. stop timers, remove listenets, unload sounds, etc.)
 end
 
 function scene:destroyScene( event )
 	local group = self.view
+	
 end
 
 

@@ -17,6 +17,16 @@ settings =
 				"Icon-72.png", 
 				"Icon-72@2x.png", 
 			},
+			UIAppFonts = 
+			{
+				"TitilliumWeb-Regular.ttf",
+				"TitilliumWeb-Bold.ttf",
+			},
+			UIApplicationExitsOnSuspend = true
 		},
 	},
+	androidPermissions =
+    {
+         "android.permission.INTERNET",
+    },
 }
